@@ -59,28 +59,52 @@ on `Store` ID into a single dataset — 1,017,209 rows, 18 columns.
 - Dropped rows where lag/rolling features couldn't be computed (start
   of each store's history).
 - Final feature set: 836,587 rows, 25 columns.
+- One-hot encoded categorical columns (`StoreType`, `Assortment`,
+  `StateHoliday`, `PromoInterval`) into numeric 0/1 columns.
 
-### 5. Modeling _(in progress)_
-- Baseline (naive) vs Linear Regression vs Random Forest vs XGBoost
+### 5. Modeling
+- Split data chronologically (train on data before 2015-06-01, test on
+  everything after) to simulate real deployment — never randomly, to
+  avoid leaking future information into training.
+- Built a naive baseline ("sales same day last week") to benchmark
+  against.
+- Trained and compared Linear Regression, Random Forest, and XGBoost.
 
-### 6. Evaluation _(planned)_
-- Time-series cross-validation, error analysis
+### 6. Evaluation
+- Evaluated every model on the same held-out test period using RMSE,
+  MAE, MAPE, and R².
+- XGBoost was the best performer, though the improvement over Random
+  Forest was modest — most of the gain came from moving past a purely
+  linear model to one that captures non-linear feature interactions.
+- Feature importance (from Random Forest) showed `Sales_RollingMean_7`
+  (62%) and `Promo` (16%) as by far the most influential features —
+  quantitatively confirming the EDA findings above. The two engineered
+  time-series features together account for ~64% of the model's
+  decision-making, underlining that feature engineering mattered more
+  than model choice for this problem.
 
 ## Results
-_(Fill in once model comparison is complete)_
 
-| Model | RMSE | MAPE |
-|-------|------|------|
-| Naive Baseline | - | - |
-| Linear Regression | - | - |
-| Random Forest | - | - |
-| XGBoost | - | - |
+| Model | RMSE | MAE | MAPE | R² |
+|-------|------|-----|------|-----|
+| Naive Baseline | 3063.02 | 2433.95 | 36.94% | 0.0307 |
+| Linear Regression | 1542.51 | 1107.97 | 16.89% | 0.7542 |
+| Random Forest | 1158.68 | 810.89 | 11.91% | 0.8613 |
+| **XGBoost** | **1084.53** | **766.83** | **11.20%** | **0.8785** |
+
+XGBoost reduced RMSE by ~65% and improved R² from 0.03 to 0.88 compared
+to the naive baseline.
 
 ## Live Demo
 _(Add Streamlit link once deployed)_
 
 ## What I'd do next
-_(Fill in at the end)_
+- Investigate the gap between RMSE and MAE further with targeted error
+  analysis — likely concentrated around holidays and unusual promo days.
+- Try time-series cross-validation instead of a single train/test split
+  for a more robust performance estimate.
+- Experiment with additional lag windows (e.g. 14-day, 30-day) and
+  holiday-proximity features.
 
 ## How to run
 ```bash
